@@ -49,7 +49,7 @@ torchrun --nproc_per_node=1 train/lora_train_ruler.py \
 - **datamaker `input` ≠ full prompt**: the answer prefix is split off into the `answer_prefix` field during generation; train/data.py rebuilds the final assistant response from `answer_prefix + outputs`.
 - **Tokenization**: default `--tokenizer_type none` counts whitespace — `start.sh` and focused runs use `--tokenizer_path gpt2 --tokenizer_type hf` for accurate length control.
 - **Qwen3-Base chat template hides "thinking" blocks**: `preprocess()` in train/lora_train_ruler.py must render prompt with `add_generation_prompt=True`, append assistant content + `<|im_end|>` manually, and mask via prefix-token-length — not by searching for an assistant marker in templated text.
-- **QA task** needs real data at `datamaker/data/squad.json` / `hotpotqa.json` (`qa.py`). SQuAD download works; HotpotQA mirrors are flaky/network-limited.
+- **QA task** needs real data at `datamaker/data/squad.json` / `hotpotqa.json` (`qa.py`). SQuAD download works; HotpotQA mirrors are flaky/network-limited. If the file is missing, `qa.py` warns and sets `task.skipped=True`; `prepare.py` then writes an empty `train.jsonl` and the rest of the pipeline (split, train) skips the task silently.
 - **Precision**: model loaded in `torch.bfloat16` (not fp16). `--gradient_checkpointing` is opt-in (off by default).
 - **`--val_jsonl` fallback**: if the eval file (default `test.jsonl`) is missing for a task, training silently falls back to the internal `val_ratio` split and prints a warning.
 

@@ -66,6 +66,16 @@ def main():
     tokenizer = select_tokenizer(args.tokenizer_type, args.tokenizer_path)
     task = build_task(config['task'], full_config, tokenizer, args, task_name=args.task)
 
+    # QA-style tasks can be skipped when their dataset file is missing;
+    # produce an empty file so downstream (split/train) also skips gracefully.
+    if getattr(task, 'skipped', False):
+        print(f'[warn] {args.task}: required dataset file missing, skipping generation '
+              f'(wrote 0 samples to {args.save_dir}/{args.task}/{args.subset}.jsonl)')
+        save_file = task.save(args.save_dir, args.subset, [])
+        write_manifest(save_file, [])
+        print(f'Wrote 0 samples to {save_file}')
+        return
+
     # prepend model chat template to task template (answer_prefix appended so the
     # final answer is seeded, later split off into its own field)
     model_template = TEMPLATES.get(args.model_template_type, '{task_template}')

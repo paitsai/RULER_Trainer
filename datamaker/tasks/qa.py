@@ -22,13 +22,30 @@ class QATask(BaseTask):
             self.qas, self.docs = self._read_hotpotqa()
         else:
             raise NotImplementedError(f'dataset {self.dataset} is not implemented.')
+        if self.qas is None:
+            import warnings
+            warnings.warn(
+                f"[qa.py] dataset '{self.dataset}' data file missing at "
+                f"{os.path.join(self.data_dir, f'{self.dataset}.json')} — skipping task '{self.task_name}'"
+            )
+            self.qas, self.docs = [], []
+            self._skipped = True
+            return
+        self._skipped = False
+
+    @property
+    def skipped(self):
+        return getattr(self, '_skipped', False)
 
     @property
     def incremental(self):
         return 5
 
     def _read_squad(self):
-        with open(os.path.join(self.data_dir, 'squad.json')) as f:
+        path = os.path.join(self.data_dir, 'squad.json')
+        if not os.path.exists(path):
+            return None, None
+        with open(path) as f:
             data = json.load(f)
         total_docs = sorted({p['context'] for d in data['data'] for p in d['paragraphs']})
         doc_index = {c: i for i, c in enumerate(total_docs)}
@@ -47,7 +64,10 @@ class QATask(BaseTask):
         return qas, total_docs
 
     def _read_hotpotqa(self):
-        with open(os.path.join(self.data_dir, 'hotpotqa.json')) as f:
+        path = os.path.join(self.data_dir, 'hotpotqa.json')
+        if not os.path.exists(path):
+            return None, None
+        with open(path) as f:
             data = json.load(f)
         total_docs = sorted({f"{t}\n{''.join(p)}" for d in data for t, p in d['context']})
         doc_index = {c: i for i, c in enumerate(total_docs)}
