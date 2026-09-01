@@ -28,9 +28,15 @@ class VariableTrackingTask(BaseTask):
         return 10 if self.type_haystack != 'essay' else 50
 
     def generate_chains(self, num_chains, num_hops):
-        vars_all = [''.join(random.choices(string.ascii_uppercase, k=5)) for _ in range((num_hops + 1) * num_chains)]
-        while len(set(vars_all)) < num_chains * (num_hops + 1):
-            vars_all.append(''.join(random.choices(string.ascii_uppercase, k=5)))
+        total = (num_hops + 1) * num_chains
+        seen = set()
+        vars_all = []
+        while len(vars_all) < total:
+            name = ''.join(random.choices(string.ascii_uppercase, k=5))
+            if name in seen:
+                continue
+            seen.add(name)
+            vars_all.append(name)
 
         chains_ret = []
         for i in range(0, len(vars_all), num_hops + 1):

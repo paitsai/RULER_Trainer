@@ -27,6 +27,9 @@ OUTPUT_DIR="checkpoints/ruler_dual_agent"
 
 TOKENIZER_PATH="${TOKENIZER_PATH:-gpt2}"
 TOKENIZER_TYPE="${TOKENIZER_TYPE:-hf}"
+# gpt2's own max length is 1024; we use it purely for token counting, so the
+# "sequence length is longer than 1024" advisory from transformers is noise.
+export PYTHONWARNINGS="${PYTHONWARNINGS:-ignore::UserWarning,ignore::FutureWarning}"
 
 NUM_SAMPLES="${NUM_SAMPLES:-4096}"         # total samples per task (split 3/4 train + 1/4 test)
 TRAIN_FRACTION="${TRAIN_FRACTION:-0.75}"    # first 3/4 -> train.jsonl; remaining 1/4 -> test.jsonl
