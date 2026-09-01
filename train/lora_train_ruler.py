@@ -84,6 +84,9 @@ def parse_args():
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--max_samples_per_task", type=int, default=None,
                    help="Limit training samples per task (useful for smoke tests)")
+    p.add_argument("--val_jsonl", type=str, default=None,
+                   help="Explicit held-out eval file (e.g. <task>/test.jsonl). When set, "
+                        "no samples are carved out of the training file for validation.")
     p.add_argument("--output_dir", default=None,
                    help="Output root; per-task per-agent LoRA dirs are created inside")
     return p.parse_args()
@@ -164,11 +167,14 @@ def preprocess(messages_list, tokenizer, max_length, model_name):
     }
 
 
-def make_dataloaders(examples, tokenizer, args, rank, world_size, agent):
+def make_dataloaders(examples, tokenizer, args, rank, world_size, agent, val_examples=None):
     random.Random(args.seed).shuffle(examples)
-    n_val = int(len(examples) * args.val_ratio)
-    train_examples = examples[n_val:]
-    val_examples = examples[:n_val]
+    if val_examples is not None:
+        train_examples, val_examples = examples, val_examples
+    else:
+        n_val = int(len(examples) * args.val_ratio)
+        train_examples = examples[n_val:]
+        val_examples = examples[:n_val]
 
     train_ds = RulerDualAgentDataset(train_examples, agent, tokenizer, args.max_length, args.model_name)
     val_ds = RulerDualAgentDataset(val_examples, agent, tokenizer, args.max_length, args.model_name)
@@ -267,7 +273,7 @@ def load_lora_model(model_name, device, args):
 # Training loop (one agent)
 # ---------------------------------------------------------------------------
 
-def train_agent(args, rank, world_size, local_rank, task_name, agent, examples):
+def train_agent(args, rank, world_size, local_rank, task_name, agent, examples, val_examples=None):
     device = torch.device(f"cuda:{local_rank}" if torch.cuda.is_available() else "cpu")
 
     if is_main_process(rank):
@@ -288,7 +294,7 @@ def train_agent(args, rank, world_size, local_rank, task_name, agent, examples):
     unwrapped = model.module if world_size > 1 else model
 
     train_loader, val_loader, n_train, n_val = make_dataloaders(
-        examples, tokenizer, args, rank, world_size, agent)
+        examples, tokenizer, args, rank, world_size, agent, val_examples=val_examples)
 
     steps_per_epoch = max(len(train_loader) // args.gradient_accumulation_steps, 1)
     total_steps = steps_per_epoch * args.num_epochs
@@ -419,8 +425,19 @@ def main():
             if is_main_process(rank):
                 print(f"skip {task_name}: too few samples ({len(examples)})")
             continue
+        # explicit held-out set (e.g. test.jsonl) for eval when requested
+        val_examples = None
+        if args.val_jsonl:
+            val_file = Path(args.val_jsonl).resolve()
+            if task_file.parent != val_file.parent:
+                val_file = task_file.parent / args.val_jsonl
+            if val_file.exists():
+                val_examples = load_ruler_jsonl(val_file)
+            elif is_main_process(rank):
+                print(f"[warn] val file not found for {task_name}: {val_file} (fall back to internal split)")
         for agent in agents:
-            train_agent(args, rank, world_size, local_rank, task_name, agent, examples)
+            train_agent(args, rank, world_size, local_rank, task_name, agent, examples,
+                        val_examples=val_examples)
 
     cleanup_distributed()
 
