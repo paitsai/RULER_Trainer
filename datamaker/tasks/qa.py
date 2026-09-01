@@ -64,8 +64,11 @@ class QATask(BaseTask):
         return qas, total_docs
 
     def _read_hotpotqa(self):
-        path = os.path.join(self.data_dir, 'hotpotqa.json')
-        if not os.path.exists(path):
+        for name in ('hotpotqa.json', 'hotpot.json'):
+            path = os.path.join(self.data_dir, name)
+            if os.path.exists(path):
+                break
+        else:
             return None, None
         with open(path) as f:
             data = json.load(f)
