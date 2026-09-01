@@ -1,0 +1,59 @@
+niah_single_1:
+  task: niah
+  args:
+    type_haystack: noise
+    type_needle_k: words
+    type_needle_v: numbers
+    num_needle_k: 1
+    num_needle_v: 1
+    num_needle_q: 1
+
+niah_single_2:
+  task: niah
+  args:
+    type_haystack: noise
+    type_needle_k: words
+    type_needle_v: uuids
+    num_needle_k: 1
+    num_needle_v: 1
+    num_needle_q: 1
+
+niah_multikey_1:
+  task: niah
+  args:
+    type_haystack: noise
+    type_needle_k: words
+    type_needle_v: numbers
+    num_needle_k: 4
+    num_needle_v: 1
+    num_needle_q: 2
+
+niah_multivalue:
+  task: niah
+  args:
+    type_haystack: noise
+    type_needle_k: words
+    type_needle_v: numbers
+    num_needle_k: 1
+    num_needle_v: 4
+    num_needle_q: 1
+
+niah_multiquery:
+  task: niah
+  args:
+    type_haystack: noise
+    type_needle_k: words
+    type_needle_v: numbers
+    num_needle_k: 4
+    num_needle_v: 1
+    num_needle_q: 4
+
+niah_needle_noise:
+  task: niah
+  args:
+    type_haystack: needle
+    type_needle_k: words
+    type_needle_v: numbers
+    num_needle_k: 1
+    num_needle_v: 1
+    num_needle_q: 1

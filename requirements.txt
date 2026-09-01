@@ -1,0 +1,23 @@
+# ---------- datamaker: synthetic data generation (datamaker/) ----------
+numpy>=1.24
+PyYAML>=6.0
+wonderwords>=3.0
+tqdm>=4.66
+transformers>=4.40
+tokenizers>=0.15
+
+# ---------- train: dual-agent LoRA fine-tuning (train/) ----------
+# requires the base stack above, plus deep-learning libs
+torch>=2.5
+peft>=0.11
+accelerate>=0.30
+datasets>=2.18
+
+# ---------- datamaker optional: NeMo tokenizer manifests (--tokenizer_type nemo) ----------
+# nemo_toolkit[asr]>=1.22
+
+# ---------- datamaker optional: QA datasets (place under datamaker/data/) ----------
+# SQuAD: wget https://rajpurkar.github.io/SQuAD-explorer/dataset/dev-v2.0.json -O squad.json
+# HotpotQA: hard to fetch due to network limits; download from a HuggingFace mirror
+#   e.g. https://huggingface.co/datasets/jxie/hotpotqa/resolve/main/hotpot_dev_distractor_v1.json
+#   and rename to hotpotqa.json
