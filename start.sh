@@ -92,6 +92,12 @@ rm -rf "$SAVE_DIR"
 
 for task in $TASKS; do
     max_seq="$(max_seq_for "$task")"
+    # HotpotQA support docs are long; generation crashes when max_seq_length
+    # is too short to fit them. Skip qa_hotpot below 8K rather than failing.
+    if [ "$task" = "qa_hotpot" ] && [ "$max_seq" -lt 8192 ]; then
+        log "[skip] $task  (max_seq_length=$max_seq < 8192, hotpot needs long context)"
+        continue
+    fi
     log "[data] $task  (max_seq_length=$max_seq)"
     # Generate one full pool; we split into train.jsonl / test.jsonl below
     # to avoid re-running the (RNG-consuming) synthesis for the held-out set.
